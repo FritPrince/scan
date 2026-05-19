@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Générateur de QR Code · appel téléphonique</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qr-code-styling/1.6.0-rc.1/qr-code-styling.js"></script>
+<style>
+  :root{
+    --cream:#f6efe4;--paper:#fffdf8;--ink:#2c211a;
+    --rust:#8a3a25;--rust-deep:#6e2c1b;--terracotta:#c4632f;
+    --sage:#6f7a52;--gold:#caa05a;--line:#e3d7c2;--shadow:rgba(60,38,20,.18);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:'Outfit',sans-serif;color:var(--ink);
+    background:radial-gradient(900px 500px at 80% -5%,rgba(202,160,90,.20),transparent 60%),
+               radial-gradient(700px 500px at 0% 100%,rgba(111,122,82,.18),transparent 55%),
+               var(--cream);
+    min-height:100%;display:flex;align-items:center;justify-content:center;
+    padding:48px 20px;
+  }
+  .card{
+    width:100%;max-width:1040px;background:var(--paper);
+    border:1px solid var(--line);border-radius:26px;
+    box-shadow:0 30px 70px -30px var(--shadow);overflow:hidden;
+    display:grid;grid-template-columns:1.05fr .95fr;
+  }
+  .panel{padding:46px 44px}
+  .eyebrow{
+    font-size:12px;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--terracotta);font-weight:600;margin-bottom:14px;
+  }
+  h1{
+    font-family:'Fraunces',serif;font-weight:600;
+    font-size:clamp(28px,3.6vw,38px);line-height:1.1;
+    color:var(--rust-deep);margin-bottom:8px;
+  }
+  h1 em{font-style:italic;color:var(--terracotta)}
+  .sub{color:#6c5d4e;font-size:15px;margin-bottom:26px;font-weight:300}
+  /* sélecteur de mode */
+  .modes{display:flex;gap:8px;margin-bottom:8px}
+  .modes button{
+    flex:1;font-family:'Outfit',sans-serif;font-size:13.5px;font-weight:500;
+    padding:11px 8px;cursor:pointer;background:#fcf8f0;
+    border:1.5px solid var(--line);border-radius:10px;color:#7a6a58;
+    transition:all .18s;
+  }
+  .modes button.active{
+    background:var(--rust);border-color:var(--rust);color:#fff;
+    box-shadow:0 6px 16px -8px var(--rust);
+  }
+  label{
+    display:block;font-size:13px;font-weight:600;
+    letter-spacing:.04em;margin:20px 0 8px;color:var(--rust);
+  }
+  textarea,input[type=text]{
+    width:100%;font-family:'Outfit',sans-serif;font-size:15px;
+    color:var(--ink);background:#fcf8f0;border:1.5px solid var(--line);
+    border-radius:13px;padding:13px 15px;resize:vertical;
+    transition:border-color .2s,box-shadow .2s;
+  }
+  textarea{min-height:70px}
+  textarea:focus,input[type=text]:focus{
+    outline:none;border-color:var(--terracotta);
+    box-shadow:0 0 0 4px rgba(196,99,47,.12);
+  }
+  .row{display:flex;gap:14px;flex-wrap:wrap}
+  .row > div{flex:1;min-width:130px}
+  .color-field{display:flex;align-items:center;gap:10px}
+  input[type=color]{
+    width:46px;height:46px;border:1.5px solid var(--line);
+    border-radius:11px;background:#fcf8f0;cursor:pointer;padding:4px;
+  }
+  .color-val{font-size:13px;color:#8a7a68;font-variant-numeric:tabular-nums}
+  .logo-drop{
+    margin-top:4px;border:1.5px dashed var(--line);border-radius:13px;
+    padding:16px;text-align:center;cursor:pointer;background:#fcf8f0;
+    transition:all .2s;
+  }
+  .logo-drop:hover{border-color:var(--terracotta);background:#fbf3e6}
+  .logo-drop p{font-size:13px;color:#8a7a68}
+  .logo-drop strong{color:var(--rust);font-weight:600}
+  .logo-preview{display:none;align-items:center;gap:12px;margin-top:12px}
+  .logo-preview img{
+    width:44px;height:44px;object-fit:contain;border:1px solid var(--line);
+    border-radius:9px;background:#fff;padding:3px;
+  }
+  .logo-preview button{
+    margin-left:auto;font-size:12px;color:var(--rust);background:none;
+    border:none;cursor:pointer;text-decoration:underline;
+  }
+  .hint{font-size:12px;color:#9a8a78;margin-top:7px;font-weight:300;line-height:1.5}
+  .generate{
+    width:100%;margin-top:28px;padding:15px;font-family:'Fraunces',serif;
+    font-size:17px;font-weight:600;color:#fff;
+    background:linear-gradient(135deg,var(--terracotta),var(--rust));
+    border:none;border-radius:13px;cursor:pointer;letter-spacing:.02em;
+    box-shadow:0 14px 28px -12px var(--rust);
+    transition:transform .15s,box-shadow .15s;
+  }
+  .generate:hover{transform:translateY(-2px);box-shadow:0 18px 32px -12px var(--rust)}
+  .generate:active{transform:translateY(0)}
+  .preview{
+    background:repeating-linear-gradient(45deg,rgba(202,160,90,.05) 0 12px,transparent 12px 24px),
+               linear-gradient(160deg,#3a2a1e,#241910);
+    display:flex;flex-direction:column;align-items:center;
+    justify-content:center;padding:46px 36px;gap:24px;
+  }
+  .qr-stage{
+    background:#fff;padding:22px;border-radius:20px;
+    box-shadow:0 24px 50px -18px rgba(0,0,0,.55);
+    display:flex;align-items:center;justify-content:center;
+    min-height:300px;min-width:300px;
+  }
+  .placeholder{color:#b9a98f;font-size:14px;text-align:center;font-weight:300;max-width:200px}
+  .preview-label{font-family:'Fraunces',serif;font-style:italic;color:#e9d9bf;font-size:15px}
+  .downloads{display:flex;gap:12px}
+  .downloads button{
+    font-family:'Outfit',sans-serif;font-size:14px;font-weight:500;
+    padding:11px 22px;border-radius:11px;cursor:pointer;
+    border:1.5px solid rgba(233,217,191,.35);
+    background:rgba(255,255,255,.06);color:#f1e4cc;
+    transition:all .18s;backdrop-filter:blur(4px);
+  }
+  .downloads button:hover:not(:disabled){
+    background:var(--gold);color:#3a2a1e;border-color:var(--gold);
+  }
+  .downloads button:disabled{opacity:.35;cursor:not-allowed}
+  footer{
+    grid-column:1/-1;border-top:1px solid var(--line);padding:16px 44px;
+    font-size:12px;color:#9a8a78;display:flex;justify-content:space-between;
+    flex-wrap:wrap;gap:8px;font-weight:300;
+  }
+  footer span{color:var(--terracotta);font-weight:500}
+  @media(max-width:840px){
+    .card{grid-template-columns:1fr}
+    .panel{padding:36px 26px}.preview{padding:36px 26px}
+  }
+</style>
+</head>
+<body>
+<main class="card">
+
+  <section class="panel">
+    <div class="eyebrow">Générateur de QR Code</div>
+    <h1>QR code <em>d'appel téléphonique</em></h1>
+    <p class="sub">Crée un QR code qui lance un appel au scan. Personnalise les couleurs, ajoute ton logo, télécharge.</p>
+
+    <label>Type de QR code</label>
+    <div class="modes" id="modes">
+      <button data-mode="dynamique" class="active">Dynamique (recommandé)</button>
+      <button data-mode="direct">Appel direct</button>
+    </div>
+
+    <!-- Champ mode dynamique -->
+    <div id="champ-dynamique">
+      <label for="url-site">Adresse de ta page d'appel</label>
+      <input type="text" id="url-site" placeholder="https://mon-projet.vercel.app/appel"
+             value="https://mon-projet.vercel.app/appel">
+      <p class="hint">Le QR pointe vers cette page. Pour changer le numéro plus tard, tu modifies juste le fichier <strong>appel.html</strong> — pas besoin de réimprimer le QR.</p>
+    </div>
+
+    <!-- Champ mode direct -->
+    <div id="champ-direct" style="display:none">
+      <label for="numero">Numéro de téléphone</label>
+      <input type="text" id="numero" placeholder="0751379244" value="0751379244">
+      <p class="hint">Le QR encode directement le numéro. Simple, mais figé : changer le numéro oblige à régénérer le QR.</p>
+    </div>
+
+    <div class="row">
+      <div>
+        <label for="fg">Couleur des points</label>
+        <div class="color-field">
+          <input type="color" id="fg" value="#2c211a">
+          <span class="color-val" id="fg-val">#2c211a</span>
+        </div>
+      </div>
+      <div>
+        <label for="bg">Couleur du fond</label>
+        <div class="color-field">
+          <input type="color" id="bg" value="#ffffff">
+          <span class="color-val" id="bg-val">#ffffff</span>
+        </div>
+      </div>
+    </div>
+
+    <label>Logo au centre <span style="font-weight:300;color:#9a8a78">(optionnel)</span></label>
+    <div class="logo-drop" id="logo-drop">
+      <p><strong>Clique pour choisir</strong> une image (PNG, JPG, SVG)</p>
+    </div>
+    <div class="logo-preview" id="logo-preview">
+      <img id="logo-thumb" alt="logo">
+      <span style="font-size:13px;color:#7a6a58">Logo ajouté</span>
+      <button id="logo-remove" type="button">Retirer</button>
+    </div>
+    <input type="file" id="logo-input" accept="image/*" hidden>
+    <p class="hint">Astuce : le logo ne doit pas dépasser ~25 % du QR pour rester scannable. La correction d'erreur est au maximum.</p>
+
+    <button class="generate" id="generate">Générer le QR code</button>
+  </section>
+
+  <section class="preview">
+    <div class="qr-stage">
+      <div id="qr-canvas"></div>
+      <p class="placeholder" id="placeholder">Ton QR code apparaîtra ici après génération.</p>
+    </div>
+    <p class="preview-label">Aperçu en direct</p>
+    <div class="downloads">
+      <button id="dl-png" disabled>Télécharger PNG</button>
+      <button id="dl-svg" disabled>Télécharger SVG</button>
+    </div>
+  </section>
+
+  <footer>
+    <span>QR Studio · appel téléphonique</span>
+    <span style="color:#9a8a78">100 % côté navigateur — aucune donnée envoyée</span>
+  </footer>
+</main>
+
+<script>
+(function(){
+  "use strict";
+
+  let logoData = null;
+  let qr = null;
+  let mode = "dynamique";   // "dynamique" ou "direct"
+
+  const $ = id => document.getElementById(id);
+  const fg = $("fg"), fgVal = $("fg-val");
+  const bg = $("bg"), bgVal = $("bg-val");
+  const canvas = $("qr-canvas");
+  const placeholder = $("placeholder");
+  const dlPng = $("dl-png"), dlSvg = $("dl-svg");
+
+  fg.addEventListener("input", () => fgVal.textContent = fg.value);
+  bg.addEventListener("input", () => bgVal.textContent = bg.value);
+
+  // --- Bascule entre les modes ---
+  document.querySelectorAll("#modes button").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll("#modes button")
+        .forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      mode = btn.dataset.mode;
+      $("champ-dynamique").style.display = mode === "dynamique" ? "block" : "none";
+      $("champ-direct").style.display    = mode === "direct"    ? "block" : "none";
+    });
+  });
+
+  // --- Upload du logo ---
+  const logoDrop  = $("logo-drop");
+  const logoInput = $("logo-input");
+  const logoPrev  = $("logo-preview");
+  const logoThumb = $("logo-thumb");
+
+  logoDrop.addEventListener("click", () => logoInput.click());
+  logoInput.addEventListener("change", e => {
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      logoData = ev.target.result;
+      logoThumb.src = logoData;
+      logoDrop.style.display = "none";
+      logoPrev.style.display = "flex";
+    };
+    reader.readAsDataURL(file);
+  });
+  $("logo-remove").addEventListener("click", () => {
+    logoData = null;
+    logoInput.value = "";
+    logoDrop.style.display = "block";
+    logoPrev.style.display = "none";
+  });
+
+  // --- Génération ---
+  $("generate").addEventListener("click", () => {
+    let data;
+    if(mode === "dynamique"){
+      data = $("url-site").value.trim();
+      if(!data){ $("url-site").focus(); return; }
+    } else {
+      const num = $("numero").value.trim().replace(/\s/g,"");
+      if(!num){ $("numero").focus(); return; }
+      data = "tel:" + num;   // format qui déclenche l'appel
+    }
+
+    const options = {
+      width:300, height:300, type:"svg", data:data,
+      qrOptions:{ errorCorrectionLevel:"H" },   // max -> permet le logo
+      dotsOptions:{ color:fg.value, type:"rounded" },
+      backgroundOptions:{ color:bg.value },
+      cornersSquareOptions:{ color:fg.value, type:"extra-rounded" },
+      cornersDotOptions:{ color:fg.value },
+      imageOptions:{ crossOrigin:"anonymous", margin:6, imageSize:0.4 }
+    };
+    if(logoData) options.image = logoData;
+
+    if(!qr){
+      qr = new QRCodeStyling(options);
+      canvas.innerHTML = "";
+      qr.append(canvas);
+    } else {
+      qr.update(options);
+    }
+
+    placeholder.style.display = "none";
+    dlPng.disabled = false;
+    dlSvg.disabled = false;
+  });
+
+  dlPng.addEventListener("click", () => qr && qr.download({ name:"qr-appel", extension:"png" }));
+  dlSvg.addEventListener("click", () => qr && qr.download({ name:"qr-appel", extension:"svg" }));
+})();
+</script>
+</body>
+</html>
