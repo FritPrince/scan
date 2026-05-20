@@ -228,7 +228,8 @@
 
   let logoData = null;
   let qr = null;
-  let mode = "dynamique";   // "dynamique" ou "direct"
+  let currentOptions = null;
+  let mode = "dynamique";
 
   const $ = id => document.getElementById(id);
   const fg = $("fg"), fgVal = $("fg-val");
@@ -290,23 +291,25 @@
       data = "tel:" + num;   // format qui déclenche l'appel
     }
 
-    const options = {
-      width:300, height:300, type:"svg", data:data,
-      qrOptions:{ errorCorrectionLevel:"H" },   // max -> permet le logo
+    currentOptions = {
+      type:"svg", data:data,
+      qrOptions:{ errorCorrectionLevel:"H" },
       dotsOptions:{ color:fg.value, type:"rounded" },
       backgroundOptions:{ color:bg.value },
       cornersSquareOptions:{ color:fg.value, type:"extra-rounded" },
       cornersDotOptions:{ color:fg.value },
       imageOptions:{ crossOrigin:"anonymous", margin:6, imageSize:0.4 }
     };
-    if(logoData) options.image = logoData;
+    if(logoData) currentOptions.image = logoData;
+
+    const previewOptions = { ...currentOptions, width:300, height:300 };
 
     if(!qr){
-      qr = new QRCodeStyling(options);
+      qr = new QRCodeStyling(previewOptions);
       canvas.innerHTML = "";
       qr.append(canvas);
     } else {
-      qr.update(options);
+      qr.update(previewOptions);
     }
 
     placeholder.style.display = "none";
@@ -314,8 +317,17 @@
     dlSvg.disabled = false;
   });
 
-  dlPng.addEventListener("click", () => qr && qr.download({ name:"qr-appel", extension:"png" }));
-  dlSvg.addEventListener("click", () => qr && qr.download({ name:"qr-appel", extension:"svg" }));
+  dlPng.addEventListener("click", () => {
+    if(!currentOptions) return;
+    const qrHD = new QRCodeStyling({ ...currentOptions, width:3840, height:3840, type:"canvas" });
+    qrHD.download({ name:"qr-appel", extension:"png" });
+  });
+
+  dlSvg.addEventListener("click", () => {
+    if(!currentOptions) return;
+    const qrSvg = new QRCodeStyling({ ...currentOptions, width:1000, height:1000, type:"svg" });
+    qrSvg.download({ name:"qr-appel", extension:"svg" });
+  });
 })();
 </script>
 </body>
