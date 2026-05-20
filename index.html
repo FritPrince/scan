@@ -211,8 +211,9 @@
     </div>
     <p class="preview-label">Aperçu en direct</p>
     <div class="downloads">
-      <button id="dl-png" disabled>Télécharger PNG</button>
-      <button id="dl-svg" disabled>Télécharger SVG</button>
+      <button id="dl-png" disabled>PNG (5000 px)</button>
+      <button id="dl-jpg" disabled>JPG (5000 px)</button>
+      <button id="dl-svg" disabled>SVG (vectoriel)</button>
     </div>
   </section>
 
@@ -236,7 +237,7 @@
   const bg = $("bg"), bgVal = $("bg-val");
   const canvas = $("qr-canvas");
   const placeholder = $("placeholder");
-  const dlPng = $("dl-png"), dlSvg = $("dl-svg");
+  const dlPng = $("dl-png"), dlJpg = $("dl-jpg"), dlSvg = $("dl-svg");
 
   fg.addEventListener("input", () => fgVal.textContent = fg.value);
   bg.addEventListener("input", () => bgVal.textContent = bg.value);
@@ -314,13 +315,36 @@
 
     placeholder.style.display = "none";
     dlPng.disabled = false;
+    dlJpg.disabled = false;
     dlSvg.disabled = false;
   });
 
   dlPng.addEventListener("click", () => {
     if(!currentOptions) return;
-    const qrHD = new QRCodeStyling({ ...currentOptions, width:3840, height:3840, type:"canvas" });
+    const qrHD = new QRCodeStyling({ ...currentOptions, width:5000, height:5000, type:"canvas" });
     qrHD.download({ name:"qr-appel", extension:"png" });
+  });
+
+  dlJpg.addEventListener("click", async () => {
+    if(!currentOptions) return;
+    const qrHD = new QRCodeStyling({ ...currentOptions, width:5000, height:5000, type:"canvas" });
+    const blob = await qrHD.getRawData("png");
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = () => {
+      const c = document.createElement("canvas");
+      c.width = 5000; c.height = 5000;
+      const ctx = c.getContext("2d");
+      ctx.fillStyle = currentOptions.backgroundOptions?.color || "#ffffff";
+      ctx.fillRect(0, 0, 5000, 5000);
+      ctx.drawImage(img, 0, 0);
+      URL.revokeObjectURL(url);
+      const a = document.createElement("a");
+      a.download = "qr-appel.jpg";
+      a.href = c.toDataURL("image/jpeg", 0.95);
+      a.click();
+    };
+    img.src = url;
   });
 
   dlSvg.addEventListener("click", () => {
